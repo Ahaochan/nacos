@@ -110,7 +110,10 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     public void registerService(String serviceName, String groupName, Instance instance) throws NacosException {
         NAMING_LOGGER.info("[REGISTER-SERVICE] {} registering service {} with instance {}", namespaceId, serviceName,
                 instance);
+        // groupName默认是DEFAULT_GROUP, serviceName是服务名
+        // 缓存到本地Map里
         redoService.cacheInstanceForRedo(serviceName, groupName, instance);
+        // 进行服务注册
         doRegisterService(serviceName, groupName, instance);
     }
     
@@ -123,8 +126,10 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
      * @throws NacosException nacos exception
      */
     public void doRegisterService(String serviceName, String groupName, Instance instance) throws NacosException {
+        // 封装一个请求体
         InstanceRequest request = new InstanceRequest(namespaceId, serviceName, groupName,
                 NamingRemoteConstants.REGISTER_INSTANCE, instance);
+        // 发送注册请求到服务端
         requestToServer(request, Response.class);
         redoService.instanceRegistered(serviceName, groupName);
     }

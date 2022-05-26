@@ -97,7 +97,9 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
      * @param instance    registered instance
      */
     public void cacheInstanceForRedo(String serviceName, String groupName, Instance instance) {
+        // 把groupName和serviceName拼接起来, 用@@分隔, DEFAULT_GROUP@@服务名
         String key = NamingUtils.getGroupedName(serviceName, groupName);
+        // 构建一个InstanceRedoData对象, 缓存进本地Map里
         InstanceRedoData redoData = InstanceRedoData.build(serviceName, groupName, instance);
         synchronized (registeredInstances) {
             registeredInstances.put(key, redoData);
