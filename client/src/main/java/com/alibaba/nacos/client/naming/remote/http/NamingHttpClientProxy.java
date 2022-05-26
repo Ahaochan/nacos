@@ -415,9 +415,11 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         }
         
         NacosException exception = new NacosException();
-        
+
+        // 可以配置一个域名, 挂上一个nginx, 下面挂3个nacos节点
         if (serverListManager.isDomain()) {
             String nacosDomain = serverListManager.getNacosDomain();
+            // 默认最大重试3次
             for (int i = 0; i < maxRetry; i++) {
                 try {
                     return callServer(api, params, body, nacosDomain, method);
@@ -429,9 +431,11 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                 }
             }
         } else {
+            // 如果不是域名, 就随机取一个nacos节点
             Random random = new Random(System.currentTimeMillis());
             int index = random.nextInt(servers.size());
-            
+
+            // 有n个节点, 就最多重试n次
             for (int i = 0; i < servers.size(); i++) {
                 String server = servers.get(index);
                 try {
@@ -474,7 +478,8 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         String serviceName = params.get(CommonParams.SERVICE_NAME);
         params.putAll(getSecurityHeaders(namespace, group, serviceName));
         Header header = NamingHttpUtil.builderHeader();
-        
+
+        // 1. 拼接一个url请求地址
         String url;
         if (curServer.startsWith(HTTPS_PREFIX) || curServer.startsWith(HTTP_PREFIX)) {
             url = curServer + api;
@@ -486,13 +491,15 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         }
         
         try {
+            // 2. 发起http请求
             HttpRestResult<String> restResult = nacosRestTemplate
                     .exchangeForm(url, header, Query.newInstance().initParams(params), body, method, String.class);
             end = System.currentTimeMillis();
             
             MetricsMonitor.getNamingRequestMonitor(method, url, String.valueOf(restResult.getCode()))
                     .observe(end - start);
-            
+
+            // 3. 返回响应体
             if (restResult.ok()) {
                 return restResult.getData();
             }
