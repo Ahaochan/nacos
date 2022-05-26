@@ -73,6 +73,7 @@ import static com.alibaba.nacos.naming.misc.UtilsAndCommons.DEFAULT_CLUSTER_NAME
  */
 @RestController
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT)
+// 请求路径是/v1/ns/instance, 使用http method来区分处理逻辑, restful api
 public class InstanceController {
     
     @Autowired
@@ -102,18 +103,23 @@ public class InstanceController {
      * @throws Exception any error during register
      */
     @CanDistro
+    // 请求路径是/v1/ns/instance, POST请求, 处理服务注册请求
     @PostMapping
     @Secured(action = ActionTypes.WRITE)
     public String register(HttpServletRequest request) throws Exception {
-        
+
+        // 获取命名空间
         final String namespaceId = WebUtils
                 .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        // 获取服务名
         final String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         NamingUtils.checkServiceNameFormat(serviceName);
-        
+
+        // 获取服务实例信息
         final Instance instance = HttpRequestInstanceBuilder.newBuilder()
                 .setDefaultInstanceEphemeral(switchDomain.isDefaultInstanceEphemeral()).setRequest(request).build();
-        
+
+        // 处理服务注册请求
         getInstanceOperator().registerInstance(namespaceId, serviceName, instance);
         return "ok";
     }
