@@ -628,6 +628,7 @@ public abstract class RpcClient implements Closeable {
      * @return response from server.
      */
     public Response request(Request request) throws NacosException {
+        // 默认超时时间3000ms
         return request(request, DEFAULT_TIMEOUT_MILLS);
     }
     
@@ -642,6 +643,7 @@ public abstract class RpcClient implements Closeable {
         Response response;
         Exception exceptionThrow = null;
         long start = System.currentTimeMillis();
+        // 允许在超时时间内重试3次
         while (retryTimes < RETRY_TIMES && System.currentTimeMillis() < timeoutMills + start) {
             boolean waitReconnect = false;
             try {
@@ -650,6 +652,7 @@ public abstract class RpcClient implements Closeable {
                     throw new NacosException(NacosException.CLIENT_DISCONNECT,
                             "Client not connected, current status:" + rpcClientStatus.get());
                 }
+                // 使用长连接发起请求
                 response = this.currentConnection.request(request, timeoutMills);
                 if (response == null) {
                     throw new NacosException(SERVER_ERROR, "Unknown Exception.");
@@ -662,6 +665,7 @@ public abstract class RpcClient implements Closeable {
                                 LoggerUtils.printIfErrorEnabled(LOGGER,
                                         "Connection is unregistered, switch server, connectionId = {}, request = {}",
                                         currentConnection.getConnectionId(), request.getClass().getSimpleName());
+                                // 切换Server, 与其他nacos节点重新建立连接
                                 switchServerAsync();
                             }
                         }
@@ -689,10 +693,11 @@ public abstract class RpcClient implements Closeable {
                 exceptionThrow = e;
                 
             }
+            // 重试, 重新while循环
             retryTimes++;
             
         }
-        
+
         if (rpcClientStatus.compareAndSet(RpcClientStatus.RUNNING, RpcClientStatus.UNHEALTHY)) {
             switchServerAsyncOnRequestFail();
         }
