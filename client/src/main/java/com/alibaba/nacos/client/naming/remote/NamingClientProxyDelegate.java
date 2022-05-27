@@ -65,14 +65,18 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     
     public NamingClientProxyDelegate(String namespace, ServiceInfoHolder serviceInfoHolder, Properties properties,
             InstancesChangeNotifier changeNotifier) throws NacosException {
+        // 初始化服务信息更新组件
         this.serviceInfoUpdateService = new ServiceInfoUpdateService(properties, serviceInfoHolder, this,
                 changeNotifier);
+        // 初始化nacos server节点管理器
         this.serverListManager = new ServerListManager(properties, namespace);
         this.serviceInfoHolder = serviceInfoHolder;
         this.securityProxy = new SecurityProxy(this.serverListManager.getServerList(), NamingHttpClientManager.getInstance().getNacosRestTemplate());
         initSecurityProxy(properties);
+        // 初始化http请求客户端
         this.httpClientProxy = new NamingHttpClientProxy(namespace, securityProxy, serverListManager, properties,
                 serviceInfoHolder);
+        // 初始化grpc请求客户端
         this.grpcClientProxy = new NamingGrpcClientProxy(namespace, securityProxy, serverListManager, properties,
                 serviceInfoHolder);
     }
@@ -91,6 +95,7 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     
     @Override
     public void registerService(String serviceName, String groupName, Instance instance) throws NacosException {
+        // 临时节点的客户端代理实现类是httpClientProxy, 永久节点的客户端代理实现类是grpcClientProxy
         getExecuteClientProxy(instance).registerService(serviceName, groupName, instance);
     }
     
@@ -173,6 +178,8 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     }
     
     private NamingClientProxy getExecuteClientProxy(Instance instance) {
+        // 如果是临时节点, 需要心跳检测的, 就用grpc通信
+        // 如果是永久节点, 就用http通信
         return instance.isEphemeral() ? grpcClientProxy : httpClientProxy;
     }
     

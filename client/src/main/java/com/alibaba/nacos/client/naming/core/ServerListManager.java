@@ -84,8 +84,10 @@ public class ServerListManager implements ServerListFactory, Closeable {
     
     public ServerListManager(Properties properties, String namespace) {
         this.namespace = namespace;
+        // 从properties中获取nacos server地址
         initServerAddr(properties);
         if (!serverList.isEmpty()) {
+            // 然后随机取一个节点作为本次通信的nacos server节点
             currentIndex.set(new Random().nextInt(serverList.size()));
         } else {
             throw new NacosLoadException("serverList is empty,please check configuration");
@@ -93,6 +95,7 @@ public class ServerListManager implements ServerListFactory, Closeable {
     }
     
     private void initServerAddr(Properties properties) {
+        // endpoint默认是空字符串
         this.endpoint = InitUtils.initEndpoint(properties);
         if (StringUtils.isNotEmpty(endpoint)) {
             this.serversFromEndpoint = getServerListFromEndpoint();
@@ -102,10 +105,13 @@ public class ServerListManager implements ServerListFactory, Closeable {
                     .scheduleWithFixedDelay(this::refreshServerListIfNeed, 0, refreshServerListInternal,
                             TimeUnit.MILLISECONDS);
         } else {
+            // 从properties获取nacos server的地址
             String serverListFromProps = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
             if (StringUtils.isNotEmpty(serverListFromProps)) {
+                // 用逗号分隔
                 this.serverList.addAll(Arrays.asList(serverListFromProps.split(",")));
                 if (this.serverList.size() == 1) {
+                    // 如果只有一个节点, 可能是用nginx在前面做了负载均衡
                     this.nacosDomain = serverListFromProps;
                 }
             }

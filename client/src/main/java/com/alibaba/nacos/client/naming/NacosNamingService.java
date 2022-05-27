@@ -83,15 +83,19 @@ public class NacosNamingService implements NamingService {
     
     private void init(Properties properties) throws NacosException {
         ValidatorUtils.checkInitParam(properties);
+        // 从properties中获取namespace命名空间, 默认是public
         this.namespace = InitUtils.initNamespaceForNaming(properties);
         InitUtils.initSerialization();
         InitUtils.initWebRootContext(properties);
         initLogName(properties);
-        
+
+        // 初始化实例信息变化监听器
         this.changeNotifier = new InstancesChangeNotifier();
         NotifyCenter.registerToPublisher(InstancesChangeEvent.class, 16384);
         NotifyCenter.registerSubscriber(changeNotifier);
+        // 初始化服务信息
         this.serviceInfoHolder = new ServiceInfoHolder(namespace, properties);
+        // 初始化客户端代理, 用来和nacos server进行通信
         this.clientProxy = new NamingClientProxyDelegate(this.namespace, serviceInfoHolder, properties, changeNotifier);
     }
     
@@ -142,6 +146,7 @@ public class NacosNamingService implements NamingService {
     @Override
     public void registerInstance(String serviceName, String groupName, Instance instance) throws NacosException {
         NamingUtils.checkInstanceIsLegal(instance);
+        // 调用客户端代理, 发送服务注册请求给nacos server
         clientProxy.registerService(serviceName, groupName, instance);
     }
     
