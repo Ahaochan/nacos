@@ -648,12 +648,14 @@ public class ServiceManager implements RecordListener<Service> {
         Service service = getService(namespaceId, serviceName);
         
         synchronized (service) {
-            // 更新服务实例列表
+            // 对命名空间->服务->cluster->instance这套数据结构和模型完成内存服务注册
             List<Instance> instanceList = addIpAddresses(service, ephemeral, ips);
             
             Instances instances = new Instances();
             instances.setInstanceList(instanceList);
             
+            // distro协议, 延迟异步同步到其他nacos节点
+            // 实现类是com.alibaba.nacos.naming.consistency.ephemeral.distro.DistroConsistencyServiceImpl
             consistencyService.put(key, instances);
         }
     }

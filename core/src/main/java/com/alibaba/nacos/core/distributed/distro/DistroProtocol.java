@@ -113,6 +113,7 @@ public class DistroProtocol {
      */
     public void sync(DistroKey distroKey, DataOperation action, long delay) {
         for (Member each : memberManager.allMembersWithoutSelf()) {
+            // 延迟异步同步到其他nacos节点, 默认延迟1000ms
             syncToTarget(distroKey, action, each.getAddress(), delay);
         }
     }
@@ -126,9 +127,11 @@ public class DistroProtocol {
      * @param delay        delay time for sync
      */
     public void syncToTarget(DistroKey distroKey, DataOperation action, String targetServer, long delay) {
+        // 构建延迟任务相关参数, 默认延迟1000ms
         DistroKey distroKeyWithTarget = new DistroKey(distroKey.getResourceKey(), distroKey.getResourceType(),
                 targetServer);
         DistroDelayTask distroDelayTask = new DistroDelayTask(distroKeyWithTarget, action, delay);
+        // 延迟复制任务执行引擎
         distroTaskEngineHolder.getDelayTaskExecuteEngine().addTask(distroKeyWithTarget, distroDelayTask);
         if (Loggers.DISTRO.isDebugEnabled()) {
             Loggers.DISTRO.debug("[DISTRO-SCHEDULE] {} to {}", distroKey, targetServer);
