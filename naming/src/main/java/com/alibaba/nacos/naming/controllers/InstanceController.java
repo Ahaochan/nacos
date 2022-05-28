@@ -108,7 +108,7 @@ public class InstanceController {
     @Secured(action = ActionTypes.WRITE)
     public String register(HttpServletRequest request) throws Exception {
 
-        // 获取命名空间
+        // 获取命名空间, 默认是public
         final String namespaceId = WebUtils
                 .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         // 获取服务名
