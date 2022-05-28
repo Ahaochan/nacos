@@ -62,6 +62,7 @@ public abstract class AbstractClient implements Client {
         if (null == publishers.put(service, instancePublishInfo)) {
             MetricsMonitor.incrementInstanceCount();
         }
+        // 往内存队列里放一个Event事件, 后台异步线程从这个Event对应的内存队列里取出事件来处理
         NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(this));
         Loggers.SRV_LOG.info("Client change for service {}, {}", service, getClientId());
         return true;

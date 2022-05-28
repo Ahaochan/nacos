@@ -73,8 +73,8 @@ import static com.alibaba.nacos.naming.misc.UtilsAndCommons.DEFAULT_CLUSTER_NAME
  */
 @RestController
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT)
-// 请求路径是/v1/ns/instance, 使用http method来区分处理逻辑, restful api
 public class InstanceController {
+    // 请求路径是/v1/ns/instance, 使用http method来区分处理逻辑, restful api
     
     @Autowired
     private SwitchDomain switchDomain;

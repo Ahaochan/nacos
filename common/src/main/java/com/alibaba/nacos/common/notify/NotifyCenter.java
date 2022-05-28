@@ -296,7 +296,8 @@ public class NotifyCenter {
         }
         
         final String topic = ClassUtils.getCanonicalName(eventType);
-        
+
+        // 每种Event对应独立的内存队列
         EventPublisher publisher = INSTANCE.publisherMap.get(topic);
         if (publisher != null) {
             return publisher.publish(event);

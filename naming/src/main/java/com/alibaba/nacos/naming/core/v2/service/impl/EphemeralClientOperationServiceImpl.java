@@ -49,20 +49,28 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
     
     @Override
     public void registerInstance(Service service, Instance instance, String clientId) {
+        // 初始化命名空间namespace, 初始化Service, 往命名空间namespace里添加服务Service
+        // 如果初始化过, 就不用初始化了
         Service singleton = ServiceManager.getInstance().getSingleton(service);
         if (!singleton.isEphemeral()) {
+            // grpc不支持永久节点的注册, 要改用http来注册永久节点
             throw new NacosRuntimeException(NacosException.INVALID_PARAM,
                     String.format("Current service %s is persistent service, can't register ephemeral instance.",
                             singleton.getGroupedServiceName()));
         }
+        // 根据当前的clientId从客户端管理器里取出一个Client客户端, 默认实现类是ConnectionBasedClient
         Client client = clientManager.getClient(clientId);
         if (!clientIsLegal(client, clientId)) {
             return;
         }
+        // 根据传入的实例信息, 初始化一个InstancePublishInfo对象
         InstancePublishInfo instanceInfo = getPublishInfo(instance);
+        // 往内存队列发送了一个ClientChangedEvent事件
         client.addServiceInstance(singleton, instanceInfo);
         client.setLastUpdatedTime();
+        // 往内存队列发送了一个ClientRegisterServiceEvent事件
         NotifyCenter.publishEvent(new ClientOperationEvent.ClientRegisterServiceEvent(singleton, clientId));
+        // 往内存队列发送了一个InstanceMetadataEvent事件
         NotifyCenter
                 .publishEvent(new MetadataEvent.InstanceMetadataEvent(singleton, instanceInfo.getMetadataId(), false));
     }

@@ -783,7 +783,6 @@ public class ServiceManager implements RecordListener<Service> {
         Datum datum = consistencyService
                 .get(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), ephemeral));
 
-
         List<Instance> currentIPs = service.allIPs(ephemeral);
         Map<String, Instance> currentInstances = new HashMap<>(currentIPs.size());
         Set<String> currentInstanceIds = CollectionUtils.set();
@@ -803,6 +802,7 @@ public class ServiceManager implements RecordListener<Service> {
         // 遍历要注册进来的服务实例对象
         for (Instance instance : ips) {
             if (!service.getClusterMap().containsKey(instance.getClusterName())) {
+                // 如果当前服务Service没有初始化cluster, 就进行初始化
                 Cluster cluster = new Cluster(instance.getClusterName(), service);
                 cluster.init();
                 service.getClusterMap().put(instance.getClusterName(), cluster);

@@ -56,11 +56,13 @@ public class NamingEventPublisher extends Thread implements ShardedEventPublishe
     
     @Override
     public void init(Class<? extends Event> type, int bufferSize) {
+        // bufferSize默认是16384
         this.queueMaxSize = bufferSize;
         this.queue = new ArrayBlockingQueue<>(bufferSize);
         this.publisherName = type.getSimpleName();
         super.setName(THREAD_NAME + this.publisherName);
         super.setDaemon(true);
+        // 开启一个线程, 来执行run方法, 消费内存队列里的Event事件
         super.start();
         initialized = true;
     }
@@ -114,9 +116,11 @@ public class NamingEventPublisher extends Thread implements ShardedEventPublishe
         final Runnable job = () -> subscriber.onEvent(event);
         final Executor executor = subscriber.executor();
         if (executor != null) {
+            // 如果Subscriber订阅者有线程池, 就丢到线程池里去执行
             executor.execute(job);
         } else {
             try {
+                // 否则就同步执行
                 job.run();
             } catch (Throwable e) {
                 Loggers.EVT_LOG.error("Event callback exception: ", e);
@@ -133,7 +137,9 @@ public class NamingEventPublisher extends Thread implements ShardedEventPublishe
     @Override
     public void run() {
         try {
+            // 等待Subscriber初始化完毕
             waitSubscriberForInit();
+            // 消费内存队列里的Event数据
             handleEvents();
         } catch (Exception e) {
             Loggers.EVT_LOG.error("Naming Event Publisher {}, stop to handle event due to unexpected exception: ",
@@ -155,6 +161,7 @@ public class NamingEventPublisher extends Thread implements ShardedEventPublishe
     private void handleEvents() {
         while (!shutdown) {
             try {
+                // 从内存队列中取出Event事件进行消费
                 final Event event = queue.take();
                 handleEvent(event);
             } catch (InterruptedException e) {
@@ -175,6 +182,7 @@ public class NamingEventPublisher extends Thread implements ShardedEventPublishe
             return;
         }
         for (Subscriber subscriber : subscribers) {
+            // 观察者模式
             notifySubscriber(subscriber, event);
         }
     }

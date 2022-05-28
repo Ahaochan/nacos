@@ -72,11 +72,13 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
     
     @Override
     public void request(Payload grpcRequest, StreamObserver<Payload> responseObserver) {
-        
+        // grpc请求的入口
+        // 客户端请求的访问顺序: ServerCheckRequest -> SubscribeServiceRequest -> InstanceRequest -> ServiceQueryRequest -> HealthCheckRequest
         traceIfNecessary(grpcRequest, true);
         String type = grpcRequest.getMetadata().getType();
         
         //server is on starting.
+        // 如果服务还未完全启动, 就返回错误信息给客户端
         if (!ApplicationUtils.isStarted()) {
             Payload payloadResponse = GrpcUtils.convert(
                     ErrorResponse.build(NacosException.INVALID_SERVER_STATUS, "Server is starting,please try later."));
@@ -88,6 +90,7 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         }
         
         // server check.
+        // 客户端检查nacos server是否正常的请求, 如果正常就建立连接成功, 允许客户端进行后面的请求
         if (ServerCheckRequest.class.getSimpleName().equals(type)) {
             Payload serverCheckResponseP = GrpcUtils.convert(new ServerCheckResponse(CONTEXT_KEY_CONN_ID.get()));
             traceIfNecessary(serverCheckResponseP, false);
@@ -95,9 +98,10 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
             responseObserver.onCompleted();
             return;
         }
-        
+
         RequestHandler requestHandler = requestHandlerRegistry.getByRequestType(type);
         //no handler found.
+        // 如果请求没有对应的处理器, 就返回错误信息给客户端
         if (requestHandler == null) {
             Loggers.REMOTE_DIGEST.warn(String.format("[%s] No handler for request type : %s :", "grpc", type));
             Payload payloadResponse = GrpcUtils
@@ -166,6 +170,7 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
             requestMeta.setClientVersion(connection.getMetaInfo().getVersion());
             requestMeta.setLabels(connection.getMetaInfo().getLabels());
             connectionManager.refreshActiveTime(requestMeta.getConnectionId());
+            // 处理请求
             Response response = requestHandler.handleRequest(request, requestMeta);
             Payload payloadResponse = GrpcUtils.convert(response);
             traceIfNecessary(payloadResponse, false);

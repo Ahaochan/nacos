@@ -35,7 +35,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class InstanceRequestHandler extends RequestHandler<InstanceRequest, InstanceResponse> {
-    
+    // 服务注册请求的处理类
     private final EphemeralClientOperationServiceImpl clientOperationService;
     
     public InstanceRequestHandler(EphemeralClientOperationServiceImpl clientOperationService) {
@@ -59,11 +59,13 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest, Inst
     }
     
     private InstanceResponse registerInstance(Service service, InstanceRequest request, RequestMeta meta) {
+        // 处理服务注册请求
         clientOperationService.registerInstance(service, request.getInstance(), meta.getConnectionId());
         return new InstanceResponse(NamingRemoteConstants.REGISTER_INSTANCE);
     }
     
     private InstanceResponse deregisterInstance(Service service, InstanceRequest request, RequestMeta meta) {
+        // 处理服务下线请求
         clientOperationService.deregisterInstance(service, request.getInstance(), meta.getConnectionId());
         return new InstanceResponse(NamingRemoteConstants.DE_REGISTER_INSTANCE);
     }
