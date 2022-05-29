@@ -153,7 +153,7 @@ public class NacosDelayTaskExecuteEngine extends AbstractNacosTaskExecuteEngine<
                 continue;
             }
 
-            // 拿到任务处理器
+            // 拿到任务处理器, DistroDelayTaskProcessor
             NacosTaskProcessor processor = getProcessor(taskKey);
             if (null == processor) {
                 getEngineLog().error("processor not found for task, so discarded. " + task);
@@ -163,10 +163,12 @@ public class NacosDelayTaskExecuteEngine extends AbstractNacosTaskExecuteEngine<
                 // ReAdd task if process failed
                 // 用任务处理器去执行这个任务
                 if (!processor.process(task)) {
+                    // 如果处理失败了, 就重新添加task到Map里, 下个执行周期重新执行这个task
                     retryFailedTask(taskKey, task);
                 }
             } catch (Throwable e) {
                 getEngineLog().error("Nacos task execute error ", e);
+                // 如果处理失败了, 就重新添加task到Map里, 下个执行周期重新执行这个task
                 retryFailedTask(taskKey, task);
             }
         }
@@ -174,6 +176,7 @@ public class NacosDelayTaskExecuteEngine extends AbstractNacosTaskExecuteEngine<
     
     private void retryFailedTask(Object key, AbstractDelayTask task) {
         task.setLastProcessTime(System.currentTimeMillis());
+        // 重新添加task到Map里, 下个执行周期重新执行这个task
         addTask(key, task);
     }
     
