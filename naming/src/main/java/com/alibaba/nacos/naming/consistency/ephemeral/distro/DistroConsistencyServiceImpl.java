@@ -155,6 +155,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             return;
         }
 
+        // 推送数据到一个notifier的内存队列里, notifier是一个Runnable, 会自己消费这些数据
         // 如果有监听者, 就发起数据变更通知的event事件, 主动推送给订阅的RecordListener
         notifier.addTask(key, DataOperation.CHANGE);
     }
@@ -306,6 +307,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     public boolean processData(DistroData distroData) {
         DistroHttpData distroHttpData = (DistroHttpData) distroData;
         Datum<Instances> datum = (Datum<Instances>) distroHttpData.getDeserializedContent();
+        // 将反序列化的实例数据存储到DataStore中
         onPut(datum.key, datum.value);
         return true;
     }
@@ -403,6 +405,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             if (action == DataOperation.CHANGE) {
                 services.put(datumKey, StringUtils.EMPTY);
             }
+            // 在Notifier.handle()方法中消费处理
             tasks.offer(Pair.with(datumKey, action));
         }
         
@@ -417,6 +420,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             for (; ; ) {
                 try {
                     Pair<String, DataOperation> pair = tasks.take();
+                    // 死循环, 不停从队列里取出数据进行消费
                     handle(pair);
                 } catch (Throwable e) {
                     Loggers.DISTRO.error("[NACOS-DISTRO] Error while handling notifying task", e);
@@ -443,11 +447,13 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                     
                     try {
                         if (action == DataOperation.CHANGE) {
+                            // 回调监听器的onChange方法
                             listener.onChange(datumKey, dataStore.get(datumKey).value);
                             continue;
                         }
                         
                         if (action == DataOperation.DELETE) {
+                            // 回调监听器的onDelete方法
                             listener.onDelete(datumKey);
                             continue;
                         }

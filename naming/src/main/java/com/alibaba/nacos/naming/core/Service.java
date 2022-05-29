@@ -178,7 +178,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     public void onChange(String key, Instances value) throws Exception {
         
         Loggers.SRV_LOG.info("[NACOS-RAFT] datum is changed, key: {}, value: {}", key, value);
-        
+
+        // 遍历有变化的服务实例列表, 调整权重
         for (Instance instance : value.getInstanceList()) {
             
             if (instance == null) {
@@ -194,9 +195,11 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
                 instance.setWeight(0.01D);
             }
         }
-        
+
+        // 更新服务Service的实例信息
         updateIPs(value.getInstanceList(), KeyBuilder.matchEphemeralInstanceListKey(key));
-        
+
+        // 重新计算checksum校验和
         recalculateChecksum();
     }
     
@@ -235,11 +238,13 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
      * @param ephemeral whether is ephemeral instance
      */
     public void updateIPs(Collection<Instance> instances, boolean ephemeral) {
+        // Map<Cluster, List<Instance>>
         Map<String, List<Instance>> ipMap = new HashMap<>(clusterMap.size());
         for (String clusterName : clusterMap.keySet()) {
             ipMap.put(clusterName, new ArrayList<>());
         }
-        
+
+        // 1. 初始化ipMap和cluster对应的服务实例列表
         for (Instance instance : instances) {
             try {
                 if (instance == null) {
@@ -250,7 +255,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
                 if (StringUtils.isEmpty(instance.getClusterName())) {
                     instance.setClusterName(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
                 }
-                
+
+                // 初始化集群
                 if (!clusterMap.containsKey(instance.getClusterName())) {
                     Loggers.SRV_LOG.warn(
                             "cluster: {} not found, ip: {}, will create new cluster with default configuration.",
@@ -271,7 +277,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
                 Loggers.SRV_LOG.error("[NACOS-DOM] failed to process ip: " + instance, e);
             }
         }
-        
+
+        // 2. 更新每个Cluster里的服务实例信息
         for (Map.Entry<String, List<Instance>> entry : ipMap.entrySet()) {
             //make every ip mine
             List<Instance> entryIPs = entry.getValue();
@@ -279,7 +286,9 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         }
         
         setLastModifiedMillis(System.currentTimeMillis());
+        // 3. 发布服务Service变更通知
         getPushService().serviceChanged(this);
+        // 4. 双写到v2版本的逻辑上
         ApplicationUtils.getBean(DoubleWriteEventListener.class).doubleWriteToV2(this, ephemeral);
         StringBuilder stringBuilder = new StringBuilder();
         

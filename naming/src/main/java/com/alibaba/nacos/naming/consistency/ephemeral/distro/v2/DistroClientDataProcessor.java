@@ -140,13 +140,16 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
         switch (distroData.getType()) {
             case ADD:
             case CHANGE:
+                // 反序列化ClientSyncData对象
                 ClientSyncData clientSyncData = ApplicationUtils.getBean(Serializer.class)
                         .deserialize(distroData.getContent(), ClientSyncData.class);
+                // 处理新增和变更实例信息
                 handlerClientSyncData(clientSyncData);
                 return true;
             case DELETE:
                 String deleteClientId = distroData.getDistroKey().getResourceKey();
                 Loggers.DISTRO.info("[Client-Delete] Received distro client sync data {}", deleteClientId);
+                // 处理删除实例信息
                 clientManager.clientDisconnected(deleteClientId);
                 return true;
             default:
@@ -167,20 +170,27 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
         List<String> serviceNames = clientSyncData.getServiceNames();
         List<InstancePublishInfo> instances = clientSyncData.getInstancePublishInfos();
         Set<Service> syncedService = new HashSet<>();
+        // 遍历每个命名空间
         for (int i = 0; i < namespaces.size(); i++) {
+            // 根据入参构造服务Service对象
             Service service = Service.newService(namespaces.get(i), groupNames.get(i), serviceNames.get(i));
+            // 取出ServiceManager单例中对应的服务Service对象, 没有就用service初始化进去
             Service singleton = ServiceManager.getInstance().getSingleton(service);
             syncedService.add(singleton);
             InstancePublishInfo instancePublishInfo = instances.get(i);
             if (!instancePublishInfo.equals(client.getInstancePublishInfo(singleton))) {
+                // 发布ClientChangedEvent事件
                 client.addServiceInstance(singleton, instancePublishInfo);
+                // 发布ClientRegisterServiceEvent事件
                 NotifyCenter.publishEvent(
                         new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
             }
         }
         for (Service each : client.getAllPublishedService()) {
             if (!syncedService.contains(each)) {
+                // 发布ClientChangedEvent事件
                 client.removeServiceInstance(each);
+                // 发布ClientDeregisterServiceEvent事件
                 NotifyCenter.publishEvent(
                         new ClientOperationEvent.ClientDeregisterServiceEvent(each, client.getClientId()));
             }

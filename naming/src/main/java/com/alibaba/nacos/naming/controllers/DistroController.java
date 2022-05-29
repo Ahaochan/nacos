@@ -51,6 +51,7 @@ import java.util.Map;
 @RestController
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_PARTITION_CONTEXT)
 public class DistroController {
+    // 请求路径是/v1/ns/distro, 使用http method来区分处理逻辑, restful api
     
     @Autowired
     private DistroProtocol distroProtocol;
@@ -70,7 +71,7 @@ public class DistroController {
      */
     @PutMapping("/datum")
     public ResponseEntity onSyncDatum(@RequestBody Map<String, Datum<Instances>> dataMap) throws Exception {
-        
+        // 处理其他节点同步过来的数据
         if (dataMap.isEmpty()) {
             Loggers.DISTRO.error("[onSync] receive empty entity!");
             throw new NacosException(NacosException.INVALID_PARAM, "receive empty entity!");
@@ -82,8 +83,10 @@ public class DistroController {
                 String serviceName = KeyBuilder.getServiceName(entry.getKey());
                 if (!serviceManager.containService(namespaceId, serviceName) && switchDomain
                         .isDefaultInstanceEphemeral()) {
+                    // 初始化命名空间和服务Service
                     serviceManager.createEmptyService(namespaceId, serviceName, true);
                 }
+                // 解析请求体, 构造DistroHttpData对象, 交给distroProtocol组件去处理
                 DistroHttpData distroHttpData = new DistroHttpData(createDistroKey(entry.getKey()), entry.getValue());
                 distroProtocol.onReceive(distroHttpData);
             }

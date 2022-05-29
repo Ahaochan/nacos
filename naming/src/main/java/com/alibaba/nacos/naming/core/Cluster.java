@@ -236,9 +236,11 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
      * @param ephemeral whether these instances are ephemeral
      */
     public void updateIps(List<Instance> ips, boolean ephemeral) {
-        
+
+        // 要更新持临时节点或者持久化节点
         Set<Instance> toUpdateInstances = ephemeral ? ephemeralInstances : persistentInstances;
-        
+
+        // 初始化oldIpMap对象, 暂存之前的实例列表
         HashMap<String, Instance> oldIpMap = new HashMap<>(toUpdateInstances.size());
         
         for (Instance ip : toUpdateInstances) {
