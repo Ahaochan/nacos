@@ -494,7 +494,7 @@ public class ServiceManager implements RecordListener<Service> {
         
         checkServiceIsNull(service, namespaceId, serviceName);
 
-        // 往
+        // 进行实例的注册
         addInstance(namespaceId, serviceName, instance.isEphemeral(), instance);
     }
     

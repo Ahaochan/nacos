@@ -339,6 +339,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     @Override
     public void listen(String key, RecordListener listener) throws NacosException {
         if (!listeners.containsKey(key)) {
+            // 对当前key添加一个内存队列, 用于异步消费事件
             listeners.put(key, new ConcurrentLinkedQueue<>());
         }
         
