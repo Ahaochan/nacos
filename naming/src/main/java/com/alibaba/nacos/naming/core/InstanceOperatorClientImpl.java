@@ -98,9 +98,13 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     @Override
     public void registerInstance(String namespaceId, String serviceName, Instance instance) {
         boolean ephemeral = instance.isEphemeral();
+        // 拼接客户端id, ${ip}:${port}#${ephemeral}
         String clientId = IpPortBasedClient.getClientId(instance.toInetAddr(), ephemeral);
+        // 创建客户端, 并建立连接
         createIpPortClientIfAbsent(clientId);
+        // 根据服务注册请求参数, 构造一个Service对象
         Service service = getService(namespaceId, serviceName, ephemeral);
+        // 进行服务注册
         clientOperationService.registerInstance(service, instance, clientId);
     }
     
@@ -327,8 +331,11 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     }
     
     private Service getService(String namespaceId, String serviceName, boolean ephemeral) {
+        // 获取分组名称, 默认为DEFAULT_GROUP
         String groupName = NamingUtils.getGroupName(serviceName);
+        // 获取服务名称
         String serviceNameNoGrouped = NamingUtils.getServiceName(serviceName);
+        // 封装成一个Service对象
         return Service.newService(namespaceId, groupName, serviceNameNoGrouped, ephemeral);
     }
     

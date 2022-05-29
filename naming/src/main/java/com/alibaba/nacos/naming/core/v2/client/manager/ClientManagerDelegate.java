@@ -104,6 +104,7 @@ public class ClientManagerDelegate implements ClientManager {
         if (isConnectionBasedClient(clientId)) {
             return connectionBasedClientManager;
         }
+        // 根据clientId的节点是否持久化标识, 获取持久节点客户端管理器或者临时节点客户端管理器
         return clientId.endsWith(ClientConstants.PERSISTENT_SUFFIX) ? persistentIpPortClientManager : ephemeralIpPortClientManager;
     }
     
