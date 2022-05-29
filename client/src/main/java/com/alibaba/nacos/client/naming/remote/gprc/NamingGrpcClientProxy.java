@@ -131,6 +131,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
                 NamingRemoteConstants.REGISTER_INSTANCE, instance);
         // 发送注册请求到服务端
         requestToServer(request, Response.class);
+        // 标记刚才存入redoService的InstanceRedoData为已注册
         redoService.instanceRegistered(serviceName, groupName);
     }
     
