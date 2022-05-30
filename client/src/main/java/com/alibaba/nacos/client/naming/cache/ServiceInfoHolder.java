@@ -135,6 +135,7 @@ public class ServiceInfoHolder implements Closeable {
      * @return service info
      */
     public ServiceInfo processServiceInfo(String json) {
+        // 反序列化服务端推送过来的json
         ServiceInfo serviceInfo = JacksonUtils.toObj(json, ServiceInfo.class);
         serviceInfo.setJsonFromServer(json);
         return processServiceInfo(serviceInfo);
@@ -156,6 +157,7 @@ public class ServiceInfoHolder implements Closeable {
             //empty or error push, just ignore
             return oldService;
         }
+        // 对本地缓存的服务实例进行更新
         serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
         boolean changed = isChangedServiceInfo(oldService, serviceInfo);
         if (StringUtils.isBlank(serviceInfo.getJsonFromServer())) {
@@ -165,8 +167,10 @@ public class ServiceInfoHolder implements Closeable {
         if (changed) {
             NAMING_LOGGER.info("current ips:({}) service: {} -> {}", serviceInfo.ipCount(), serviceInfo.getKey(),
                     JacksonUtils.toJson(serviceInfo.getHosts()));
+            // 如果服务实例发生了变更, 就发布InstancesChangeEvent事件
             NotifyCenter.publishEvent(new InstancesChangeEvent(serviceInfo.getName(), serviceInfo.getGroupName(),
                     serviceInfo.getClusters(), serviceInfo.getHosts()));
+            // 然后把服务实例信息持久化到本地磁盘中, 当重启时, 还能从磁盘中取出服务实例
             DiskCache.write(serviceInfo, cacheDir);
         }
         return serviceInfo;

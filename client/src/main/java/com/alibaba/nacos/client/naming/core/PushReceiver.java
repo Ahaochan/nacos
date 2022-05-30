@@ -68,6 +68,7 @@ public class PushReceiver implements Runnable, Closeable {
         try {
             this.serviceInfoHolder = serviceInfoHolder;
             String udpPort = getPushReceiverUdpPort();
+            // 创建一个UDP Socket, 用于接收服务端反向推送过来的的UDP数据包
             if (StringUtils.isEmpty(udpPort)) {
                 this.udpSocket = new DatagramSocket();
             } else {
@@ -94,15 +95,18 @@ public class PushReceiver implements Runnable, Closeable {
                 // byte[] is initialized with 0 full filled by default
                 byte[] buffer = new byte[UDP_MSS];
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-                
+
+                // 接收服务端反向推送的UDP数据包，然后赋值给DatagramPacket
                 udpSocket.receive(packet);
-                
+
+                // 解包UDP数据包, 反序列化
                 String json = new String(IoUtils.tryDecompress(packet.getData()), UTF_8).trim();
                 NAMING_LOGGER.info("received push data: " + json + " from " + packet.getAddress().toString());
                 
                 PushPacket pushPacket = JacksonUtils.toObj(json, PushPacket.class);
                 String ack;
                 if (PUSH_PACKAGE_TYPE_DOM.equals(pushPacket.type) || PUSH_PACKAGE_TYPE_SERVICE.equals(pushPacket.type)) {
+                    // 然后进行业务逻辑处理
                     serviceInfoHolder.processServiceInfo(pushPacket.data);
                     
                     // send ack to server
@@ -118,7 +122,8 @@ public class PushReceiver implements Runnable, Closeable {
                     ack = "{\"type\": \"unknown-ack\"" + ", \"lastRefTime\":\"" + pushPacket.lastRefTime
                             + "\", \"data\":" + "\"\"}";
                 }
-                
+
+                // 处理完毕后, 发送ACK给服务端
                 udpSocket.send(new DatagramPacket(ack.getBytes(UTF_8), ack.getBytes(UTF_8).length,
                         packet.getSocketAddress()));
             } catch (Exception e) {

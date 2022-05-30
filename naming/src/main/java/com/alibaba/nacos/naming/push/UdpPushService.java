@@ -374,7 +374,8 @@ public class UdpPushService implements ApplicationContextAware, ApplicationListe
             Loggers.PUSH.error("[NACOS-PUSH] ackEntry is null.");
             return null;
         }
-        
+
+        // 重试超过1次, 就放弃了, 不推送了
         if (ackEntry.getRetryTimes() > Constants.UDP_MAX_RETRY_TIMES) {
             Loggers.PUSH.warn("max re-push times reached, retry times {}, key: {}", ackEntry.getRetryTimes(),
                     ackEntry.getKey());
@@ -392,6 +393,7 @@ public class UdpPushService implements ApplicationContextAware, ApplicationListe
             udpSendTimeMap.put(ackEntry.getKey(), System.currentTimeMillis());
             
             Loggers.PUSH.info("send udp packet: " + ackEntry.getKey());
+            // 发送UDP数据包出去
             udpSocket.send(ackEntry.getOrigin());
             
             ackEntry.increaseRetryTime();
