@@ -321,8 +321,10 @@ public class InstanceController {
         boolean healthyOnly = Boolean.parseBoolean(WebUtils.optional(request, "healthyOnly", "false"));
         String app = WebUtils.optional(request, "app", StringUtils.EMPTY);
 
+        // 根据请求参数, 组合成一个Subscriber对象
         Subscriber subscriber = new Subscriber(clientIP + ":" + udpPort, agent, app, clientIP, namespaceId, serviceName,
                 udpPort, clusters);
+        // 获取请求命名空间下这个Service服务的所有实例列表
         return getInstanceOperator().listInstance(namespaceId, serviceName, subscriber, clusters, healthyOnly);
     }
     

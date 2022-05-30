@@ -219,6 +219,8 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         params.put(UDP_PORT_PARAM, String.valueOf(udpPort));
         params.put(CLIENT_IP_PARAM, NetUtils.localIP());
         params.put(HEALTHY_ONLY_PARAM, String.valueOf(healthyOnly));
+        // 随机选择一个nacos节点, GET请求/nacos/v1/ns/instance/list
+        // 服务端处理类是com.alibaba.nacos.naming.controllers.InstanceController.list
         String result = reqApi(UtilAndComs.nacosUrlBase + "/instance/list", params, HttpMethod.GET);
         if (StringUtils.isNotEmpty(result)) {
             return JacksonUtils.toObj(result, ServiceInfo.class);

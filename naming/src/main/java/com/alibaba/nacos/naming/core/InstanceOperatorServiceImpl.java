@@ -171,6 +171,7 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
         
         // now try to enable the push
         try {
+            // 如果传入的端口号大于0，并且判断客户端是否支持反向推送
             if (subscriber.getPort() > 0 && pushService.canEnablePush(subscriber.getAgent())) {
                 subscriberServiceV1.addClient(namespaceId, serviceName, cluster, subscriber.getAgent(),
                         new InetSocketAddress(clientIP, subscriber.getPort()), pushDataSource, StringUtils.EMPTY,
