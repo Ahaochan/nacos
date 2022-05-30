@@ -395,9 +395,11 @@ public class UdpPushService implements ApplicationContextAware, ApplicationListe
             Loggers.PUSH.info("send udp packet: " + ackEntry.getKey());
             // 发送UDP数据包出去
             udpSocket.send(ackEntry.getOrigin());
-            
+
+            // 执行次数+1
             ackEntry.increaseRetryTime();
-            
+
+            // 执行一个后台任务, 10秒没有接收到ACK, 就再重新调用一次udpPush方法
             GlobalExecutor.scheduleRetransmitter(new Retransmitter(ackEntry),
                     TimeUnit.NANOSECONDS.toMillis(Constants.ACK_TIMEOUT_NANOS), TimeUnit.MILLISECONDS);
             
