@@ -304,6 +304,10 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
             Loggers.SRV_LOG.warn("[CLIENT-BEAT] The instance has been removed for health mechanism, "
                     + "perform data compensation operations, beat: {}, serviceName: {}", clientBeat, serviceName);
             instance = parseInstance(builder.setBeatInfo(clientBeat).setServiceName(serviceName).build());
+            // 如果发送心跳时, 还没有这个实例, 就补偿注册这个实例
+            // 可能服务注册请求到nacos1, 心跳请求发到nacos2
+            // 可能服务注册请求到nacos1, 还没同步到nacos2, nacos1就重启了, 导致内存里没有这个实例数据
+            // 可能网络原因，心跳一直没过来, nacos1摘除了这个实例, 然后过了好久心跳恢复了, 就恢复这个实例数据
             serviceManager.registerInstance(namespaceId, serviceName, instance);
         }
         
@@ -317,6 +321,7 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
             clientBeat.setPort(port);
             clientBeat.setCluster(cluster);
         }
+        // 交给服务Service来处理这次心跳
         service.processClientBeat(clientBeat);
         return NamingResponseCode.OK;
     }

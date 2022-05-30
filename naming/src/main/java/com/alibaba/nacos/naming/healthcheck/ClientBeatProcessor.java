@@ -70,21 +70,26 @@ public class ClientBeatProcessor implements BeatProcessor {
         String ip = rsInfo.getIp();
         String clusterName = rsInfo.getCluster();
         int port = rsInfo.getPort();
+        // 取出当前集群里的所有服务实例
         Cluster cluster = service.getClusterMap().get(clusterName);
         List<Instance> instances = cluster.allIPs(true);
         
         for (Instance instance : instances) {
+            // 找到当前服务实例
             if (instance.getIp().equals(ip) && instance.getPort() == port) {
                 if (Loggers.EVT_LOG.isDebugEnabled()) {
                     Loggers.EVT_LOG.debug("[CLIENT-BEAT] refresh beat: {}", rsInfo.toString());
                 }
+                // 设置最后一次心跳时间为当前时间
                 instance.setLastBeat(System.currentTimeMillis());
                 if (!instance.isMarked() && !instance.isHealthy()) {
+                    // 如果不是健康状态, 就重新标记为健康状态
                     instance.setHealthy(true);
                     Loggers.EVT_LOG
                             .info("service: {} {POS} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: client beat ok",
                                     cluster.getService().getName(), ip, port, cluster.getName(),
                                     UtilsAndCommons.LOCALHOST_SITE);
+                    // 然后发送一个ServiceChangeEvent, 反向推送给订阅者客户端
                     getPushService().serviceChanged(service);
                 }
             }

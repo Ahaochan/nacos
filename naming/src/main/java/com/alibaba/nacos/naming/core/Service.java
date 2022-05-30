@@ -129,6 +129,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         ClientBeatProcessor clientBeatProcessor = new ClientBeatProcessor();
         clientBeatProcessor.setService(this);
         clientBeatProcessor.setRsInfo(rsInfo);
+        // 创建一个Runnable, 交给后台线程立刻执行
         HealthCheckReactor.scheduleNow(clientBeatProcessor);
     }
     
