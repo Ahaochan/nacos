@@ -371,6 +371,7 @@ public class InstanceController {
     @PutMapping("/beat")
     @Secured(action = ActionTypes.WRITE)
     public ObjectNode beat(HttpServletRequest request) throws Exception {
+        // 接收心跳请求的入口
         
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         result.put(SwitchEntry.CLIENT_BEAT_INTERVAL, switchDomain.getClientBeatInterval());
@@ -401,6 +402,7 @@ public class InstanceController {
                 serviceName, namespaceId);
         BeatInfoInstanceBuilder builder = BeatInfoInstanceBuilder.newBuilder();
         builder.setRequest(request);
+        // 处理心跳请求的业务逻辑
         int resultCode = getInstanceOperator()
                 .handleBeat(namespaceId, serviceName, ip, port, clusterName, clientBeat, builder);
         result.put(CommonParams.CODE, resultCode);
