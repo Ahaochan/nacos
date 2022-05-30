@@ -98,13 +98,17 @@ public class DistroFilter implements Filter {
                 filterChain.doFilter(req, resp);
                 return;
             }
+            // 默认拼接规则是${ip}:${port}
             String distroTag = distroTagGenerator.getResponsibleTag(req);
-            
+
+            // 计算distroTag, 判断是否由自己这个nacos节点处理
             if (distroMapper.responsible(distroTag)) {
+                // 要由自己这个nacos节点来处理
                 filterChain.doFilter(req, resp);
                 return;
             }
-            
+
+            // 不是自己处理, 就转发到其他nacos节点上
             // proxy request to other server if necessary:
             String userAgent = req.getHeader(HttpHeaderConsts.USER_AGENT_HEADER);
             
@@ -115,7 +119,8 @@ public class DistroFilter implements Filter {
                         "receive invalid redirect request from peer " + req.getRemoteAddr());
                 return;
             }
-            
+
+            // 找到要转发的nacos节点地址
             final String targetServer = distroMapper.mapSrv(distroTag);
             
             List<String> headerList = new ArrayList<>(16);
@@ -128,7 +133,8 @@ public class DistroFilter implements Filter {
             
             final String body = IoUtils.toString(req.getInputStream(), Charsets.UTF_8.name());
             final Map<String, String> paramsValue = HttpClient.translateParameterMap(req.getParameterMap());
-            
+
+            // 真正进行http请求转发
             RestResult<String> result = HttpClient
                     .request(HTTP_PREFIX + targetServer + req.getRequestURI(), headerList, paramsValue, body,
                             PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, Charsets.UTF_8.name(), req.getMethod());

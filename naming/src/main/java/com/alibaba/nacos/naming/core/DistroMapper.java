@@ -98,7 +98,8 @@ public class DistroMapper extends MemberChangeListener {
         if (lastIndex < 0 || index < 0) {
             return true;
         }
-        
+
+        // 对responsibleTag做hash取模, 然后判断是否在本nacos节点的区间范围内
         int target = distroHash(responsibleTag) % servers.size();
         return target >= index && target <= lastIndex;
     }
