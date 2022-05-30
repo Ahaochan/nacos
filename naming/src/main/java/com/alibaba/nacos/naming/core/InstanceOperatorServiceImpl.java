@@ -173,7 +173,9 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
         try {
             // 如果传入的端口号大于0，并且判断客户端是否支持反向推送
             if (subscriber.getPort() > 0 && pushService.canEnablePush(subscriber.getAgent())) {
+                // 创建PushClient, 用来给客户端反向推送
                 subscriberServiceV1.addClient(namespaceId, serviceName, cluster, subscriber.getAgent(),
+                        // 创建一个InetSocketAddress, 用来做udp传输
                         new InetSocketAddress(clientIP, subscriber.getPort()), pushDataSource, StringUtils.EMPTY,
                         StringUtils.EMPTY);
                 cacheMillis = switchDomain.getPushCacheMillis(serviceName);
@@ -193,11 +195,13 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
         }
         
         checkIfDisabled(service);
-        
+
+        // 获取服务的所有实例列表
         List<com.alibaba.nacos.naming.core.Instance> srvedIps = service
                 .srvIPs(Arrays.asList(StringUtils.split(cluster, StringUtils.COMMA)));
         
         // filter ips using selector:
+        // 对服务实例列表进行过滤, 比如基于label进行过滤
         if (service.getSelector() != null && StringUtils.isNotBlank(clientIP)) {
             srvedIps = selectorManager.select(service.getSelector(), clientIP, srvedIps);
         }
@@ -215,6 +219,7 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
         }
         
         long total = 0;
+        // 区分健康与不健康的服务实例列表
         Map<Boolean, List<com.alibaba.nacos.naming.core.Instance>> ipMap = new HashMap<>(2);
         ipMap.put(Boolean.TRUE, new ArrayList<>());
         ipMap.put(Boolean.FALSE, new ArrayList<>());
@@ -230,6 +235,7 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
         
         double threshold = service.getProtectThreshold();
         List<Instance> hosts;
+        // 健康实例数量 / 总实例数量 < 健康阈值
         if ((float) ipMap.get(Boolean.TRUE).size() / total <= threshold) {
             
             Loggers.SRV_LOG.warn("protect threshold reached, return all ips, service: {}", result.getName());
@@ -237,11 +243,14 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
             hosts = Stream.of(Boolean.TRUE, Boolean.FALSE).map(ipMap::get).flatMap(Collection::stream)
                     .map(InstanceUtil::deepCopy)
                     // set all to `healthy` state to protect
+                    // 触发健康保护，所有实例都设置为健康状态
                     .peek(instance -> instance.setHealthy(true)).collect(Collectors.toCollection(LinkedList::new));
         } else {
             result.setReachProtectionThreshold(false);
+            // 只返回健康的实例
             hosts = new LinkedList<>(ipMap.get(Boolean.TRUE));
             if (!healthOnly) {
+                // 如果客户端也想要不健康的实例列表, 就一起返回回去
                 hosts.addAll(ipMap.get(Boolean.FALSE));
             }
         }

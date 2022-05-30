@@ -150,6 +150,7 @@ public class NamingSubscriberServiceV1Impl implements NamingSubscriberService {
      */
     public void addClient(PushClient client) {
         // client is stored by key 'serviceName' because notify event is driven by serviceName change
+        // 初始化一个PushClient, 存储在clientMap中
         String serviceKey = UtilsAndCommons.assembleFullServiceName(client.getNamespaceId(), client.getServiceName());
         ConcurrentMap<String, PushClient> clients = clientMap.get(serviceKey);
         if (clients == null) {
