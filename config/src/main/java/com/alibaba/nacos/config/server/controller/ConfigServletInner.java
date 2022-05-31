@@ -82,6 +82,7 @@ public class ConfigServletInner {
             Map<String, String> clientMd5Map, int probeRequestSize) throws IOException {
         
         // Long polling.
+        // 请求头有没有携带Long-Pulling-Timeout, 如果有就支持长轮询
         if (LongPollingService.isSupportLongPolling(request)) {
             longPollingService.addLongPollingClient(request, response, clientMd5Map, probeRequestSize);
             return HttpServletResponse.SC_OK + "";

@@ -343,6 +343,7 @@ public class ConfigController {
         }
         
         // do long-polling
+        // 开启http长轮询, 等待, 直到有了一个数据变更后再返回
         inner.doPollingConfig(request, response, clientMd5Map, probeModify.length());
     }
     
