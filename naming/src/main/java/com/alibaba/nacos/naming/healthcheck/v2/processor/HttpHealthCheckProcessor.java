@@ -89,7 +89,8 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessorV2 {
             Map<String, String> customHeaders = healthChecker.getCustomHeaders();
             Header header = Header.newInstance();
             header.addAll(customHeaders);
-            
+
+            // 往服务实例反向发送健康检查请求, 判断是否健康, 交由HttpHealthCheckCallback做回调处理
             ASYNC_REST_TEMPLATE.get(target.toString(), header, Query.EMPTY, String.class,
                     new HttpHealthCheckCallback(instance, task, service));
             MetricsMonitor.getHttpHealthCheckMonitor().incrementAndGet();

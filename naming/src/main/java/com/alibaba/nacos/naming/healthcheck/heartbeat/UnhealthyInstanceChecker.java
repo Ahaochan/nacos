@@ -45,13 +45,17 @@ public class UnhealthyInstanceChecker implements InstanceBeatChecker {
     
     @Override
     public void doCheck(Client client, Service service, HealthCheckInstancePublishInfo instance) {
+        // 当前实例是健康状态, 并且现在已经是不健康的时候
         if (instance.isHealthy() && isUnhealthy(service, instance)) {
+            // 如果已经不健康了, 就去执行标记为不健康, 然后发布事件出去
             changeHealthyStatus(client, service, instance);
         }
     }
     
     private boolean isUnhealthy(Service service, HealthCheckInstancePublishInfo instance) {
+        // 获取心跳超时时间
         long beatTimeout = getTimeout(service, instance);
+        // 用当前时间减去最后一次心跳时间, 判断心跳时间是否超时
         return System.currentTimeMillis() - instance.getLastHeartBeatTime() > beatTimeout;
     }
     
@@ -60,6 +64,7 @@ public class UnhealthyInstanceChecker implements InstanceBeatChecker {
         if (!timeout.isPresent()) {
             timeout = Optional.ofNullable(instance.getExtendDatum().get(PreservedMetadataKeys.HEART_BEAT_TIMEOUT));
         }
+        // 默认超时时间是15秒
         return timeout.map(ConvertUtils::toLong).orElse(Constants.DEFAULT_HEART_BEAT_TIMEOUT);
     }
     
@@ -70,12 +75,15 @@ public class UnhealthyInstanceChecker implements InstanceBeatChecker {
     }
     
     private void changeHealthyStatus(Client client, Service service, HealthCheckInstancePublishInfo instance) {
+        // 标记服务实例为不健康
         instance.setHealthy(false);
         Loggers.EVT_LOG
                 .info("{POS} {IP-DISABLED} valid: {}:{}@{}@{}, region: {}, msg: client last beat: {}", instance.getIp(),
                         instance.getPort(), instance.getCluster(), service.getName(), UtilsAndCommons.LOCALHOST_SITE,
                         instance.getLastHeartBeatTime());
+        // 发布ServiceChangedEvent事件
         NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service));
+        // 发布ClientChangedEvent事件
         NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(client));
     }
 }

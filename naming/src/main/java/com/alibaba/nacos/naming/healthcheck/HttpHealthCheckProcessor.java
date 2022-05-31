@@ -74,7 +74,7 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessor {
         if (!switchDomain.isHealthCheckEnabled()) {
             return;
         }
-        
+
         Cluster cluster = task.getCluster();
         
         for (Instance ip : ips) {
@@ -104,7 +104,8 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessor {
                 Map<String, String> customHeaders = healthChecker.getCustomHeaders();
                 Header header = Header.newInstance();
                 header.addAll(customHeaders);
-    
+
+                // 往服务实例反向发送健康检查请求, 判断是否健康, 交由HttpHealthCheckCallback做回调处理
                 ASYNC_REST_TEMPLATE.get(target.toString(), header, Query.EMPTY, String.class,
                         new HttpHealthCheckCallback(ip, task));
                 MetricsMonitor.getHttpHealthCheckMonitor().incrementAndGet();
