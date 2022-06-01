@@ -346,6 +346,7 @@ public class LongPollingService {
                         }
                         
                         getRetainIps().put(clientSub.ip, System.currentTimeMillis());
+                        // 移除掉本次长轮询连接, 避免超时任务再去发送一次响应
                         iter.remove(); // Delete subscribers' relationships.
                         LogUtil.CLIENT_LOG
                                 .info("{}|{}|{}|{}|{}|{}|{}", (System.currentTimeMillis() - changeTime), "in-advance",
