@@ -292,6 +292,7 @@ public class LongPollingService {
         NotifyCenter.registerToPublisher(LocalDataChangeEvent.class, NotifyCenter.ringBufferSize);
         
         // Register A Subscriber to subscribe LocalDataChangeEvent.
+        // 将自己注册成一个Subscriber, 监听LocalDataChangeEvent事件
         NotifyCenter.registerSubscriber(new Subscriber() {
             
             @Override
@@ -299,6 +300,7 @@ public class LongPollingService {
                 if (isFixedPolling()) {
                     // Ignore.
                 } else {
+                    // 回调LocalDataChangeEvent事件的处理逻辑, 往后台线程添加一个DataChangeTask任务执行
                     if (event instanceof LocalDataChangeEvent) {
                         LocalDataChangeEvent evt = (LocalDataChangeEvent) event;
                         ConfigExecutor.executeLongPolling(new DataChangeTask(evt.groupKey, evt.isBeta, evt.betaIps));
@@ -329,6 +331,7 @@ public class LongPollingService {
         public void run() {
             try {
                 ConfigCacheService.getContentBetaMd5(groupKey);
+                // 遍历所有长轮询的客户端
                 for (Iterator<ClientLongPolling> iter = allSubs.iterator(); iter.hasNext(); ) {
                     ClientLongPolling clientSub = iter.next();
                     if (clientSub.clientMd5Map.containsKey(groupKey)) {
@@ -349,6 +352,7 @@ public class LongPollingService {
                                         RequestUtil
                                                 .getRemoteIp((HttpServletRequest) clientSub.asyncContext.getRequest()),
                                         "polling", clientSub.clientMd5Map.size(), clientSub.probeRequestSize, groupKey);
+                        // 发送异步响应
                         clientSub.sendResponse(Arrays.asList(groupKey));
                     }
                 }

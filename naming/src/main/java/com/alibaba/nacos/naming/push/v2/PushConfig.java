@@ -26,6 +26,7 @@ import com.alibaba.nacos.sys.env.EnvUtil;
  * @author xiweng.yy
  */
 public class PushConfig extends AbstractDynamicConfig {
+    // 对ServerConfigChangeEvent事件的监听者
     
     private static final String PUSH = "Push";
     

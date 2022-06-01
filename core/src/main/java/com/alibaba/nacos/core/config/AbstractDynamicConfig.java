@@ -28,7 +28,8 @@ import com.alibaba.nacos.core.utils.Loggers;
  * @author xiweng.yy
  */
 public abstract class AbstractDynamicConfig extends Subscriber<ServerConfigChangeEvent> {
-    
+    // 对ServerConfigChangeEvent事件的监听者
+
     private final String configName;
     
     protected AbstractDynamicConfig(String configName) {
@@ -38,6 +39,7 @@ public abstract class AbstractDynamicConfig extends Subscriber<ServerConfigChang
     
     @Override
     public void onEvent(ServerConfigChangeEvent event) {
+        // DefaultPublisher.notifySubscriber回调onEvent方法
         resetConfig();
     }
     
@@ -48,6 +50,7 @@ public abstract class AbstractDynamicConfig extends Subscriber<ServerConfigChang
     
     protected void resetConfig() {
         try {
+            // 从环境变量加载配置
             getConfigFromEnv();
             Loggers.CORE.info("Get {} config from env, {}", configName, printConfig());
         } catch (Exception e) {
