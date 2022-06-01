@@ -272,7 +272,8 @@ public class LongPollingService {
         
         // AsyncContext.setTimeout() is incorrect, Control by oneself
         asyncContext.setTimeout(0L);
-        
+
+        // 创建一个长轮询的任务, 交给后台线程去执行
         ConfigExecutor.executeLongPolling(
                 new ClientLongPolling(asyncContext, clientMd5Map, ip, probeRequestSize, timeout, appName, tag));
     }
@@ -392,6 +393,7 @@ public class LongPollingService {
         
         @Override
         public void run() {
+            // 将一个任务放到线程池里去执行, 用来处理超时后的逻辑
             asyncTimeoutFuture = ConfigExecutor.scheduleLongPolling(() -> {
                 try {
                     getRetainIps().put(ClientLongPolling.this.ip, System.currentTimeMillis());
@@ -428,7 +430,8 @@ public class LongPollingService {
                 }
 
             }, timeoutTime, TimeUnit.MILLISECONDS);
-            
+
+            // 将当前任务提交到队列里
             allSubs.add(this);
         }
         
