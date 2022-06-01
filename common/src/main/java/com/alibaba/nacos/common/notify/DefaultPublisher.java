@@ -102,6 +102,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
             int waitTimes = 60;
             // To ensure that messages are not lost, enable EventHandler when
             // waiting for the first Subscriber to register
+            // 等待订阅者注册上来
             for (; ; ) {
                 if (shutdown || hasSubscriber() || waitTimes <= 0) {
                     break;
@@ -114,6 +115,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
                 if (shutdown) {
                     break;
                 }
+                // 无限循环从队列里取出事件来消费
                 final Event event = queue.take();
                 receiveEvent(event);
                 UPDATER.compareAndSet(this, lastEventSequence, Math.max(lastEventSequence, event.sequence()));
@@ -142,6 +144,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
         checkIsStart();
         boolean success = this.queue.offer(event);
         if (!success) {
+            // 如果插入队列失败, 就同步执行这个事件
             LOGGER.warn("Unable to plug in due to interruption, synchronize sending time, event : {}", event);
             receiveEvent(event);
             return true;
@@ -179,6 +182,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
         }
         
         // Notification single event listener
+        // 遍历每个订阅者
         for (Subscriber subscriber : subscribers) {
             // Whether to ignore expiration events
             if (subscriber.ignoreExpireEvent() && lastEventSequence > currentEventSequence) {
@@ -189,6 +193,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
             
             // Because unifying smartSubscriber and subscriber, so here need to think of compatibility.
             // Remove original judge part of codes.
+            // 回调订阅者的onEvent方法
             notifySubscriber(subscriber, event);
         }
     }
@@ -200,11 +205,13 @@ public class DefaultPublisher extends Thread implements EventPublisher {
         
         final Runnable job = () -> subscriber.onEvent(event);
         final Executor executor = subscriber.executor();
-        
+
+        // 如果订阅者有线程池, 就交给订阅者的线程池去异步回调onEvent
         if (executor != null) {
             executor.execute(job);
         } else {
             try {
+                // 如果订阅者没有线程池, 就在当前线程同步回调onEvent
                 job.run();
             } catch (Throwable e) {
                 LOGGER.error("Event callback exception: ", e);

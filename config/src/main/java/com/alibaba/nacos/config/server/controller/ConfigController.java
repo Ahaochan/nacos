@@ -177,7 +177,9 @@ public class ConfigController {
         configInfo.setEncryptedDataKey(encryptedDataKey);
         if (StringUtils.isBlank(betaIps)) {
             if (StringUtils.isBlank(tag)) {
+                // 进行配置持久化, 通过sql插入到数据库
                 persistService.insertOrUpdate(srcIp, srcUser, configInfo, time, configAdvanceInfo, false);
+                // 发布ConfigDataChangeEvent事件
                 ConfigChangePublisher.notifyConfigChange(
                         new ConfigDataChangeEvent(false, dataId, group, tenant, time.getTime()));
             } else {
