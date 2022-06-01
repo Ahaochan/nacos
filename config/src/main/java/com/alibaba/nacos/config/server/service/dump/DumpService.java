@@ -371,6 +371,7 @@ public abstract class DumpService {
     public void dump(String dataId, String group, String tenant, long lastModified, String handleIp, boolean isBeta) {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
         String taskKey = String.join("+", dataId, group, tenant, String.valueOf(isBeta));
+        // 提交给NacosDelayTaskExecuteEngine去延迟异步执行
         dumpTaskMgr.addTask(taskKey, new DumpTask(groupKey, lastModified, handleIp, isBeta));
         DUMP_LOG.info("[dump-task] add task. groupKey={}, taskKey={}", groupKey, taskKey);
     }
@@ -382,6 +383,7 @@ public abstract class DumpService {
             boolean isBeta) {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
         String taskKey = String.join("+", dataId, group, tenant, String.valueOf(isBeta), tag);
+        // 提交给NacosDelayTaskExecuteEngine去延迟异步执行
         dumpTaskMgr.addTask(taskKey, new DumpTask(groupKey, tag, lastModified, handleIp, isBeta));
         DUMP_LOG.info("[dump-task] add task. groupKey={}, taskKey={}", groupKey, taskKey);
     }

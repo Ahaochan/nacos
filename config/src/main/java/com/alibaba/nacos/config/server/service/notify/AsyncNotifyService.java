@@ -91,6 +91,7 @@ public class AsyncNotifyService {
         NotifyCenter.registerToPublisher(ConfigDataChangeEvent.class, NotifyCenter.ringBufferSize);
         
         // Register A Subscriber to subscribe ConfigDataChangeEvent.
+        // 把AsyncNotifyService自己注册成一个NotifyCenter的Subscriber, 监听ConfigDataChangeEvent事件
         NotifyCenter.registerSubscriber(new Subscriber() {
             
             @Override
@@ -108,20 +109,25 @@ public class AsyncNotifyService {
                     // In fact, any type of queue here can be
                     Queue<NotifySingleTask> httpQueue = new LinkedList<NotifySingleTask>();
                     Queue<NotifySingleRpcTask> rpcQueue = new LinkedList<NotifySingleRpcTask>();
-                    
+
+                    // 遍历所有集群内的nacos节点
                     for (Member member : ipList) {
+                        // 如果不支持长连接, 就封装http请求任务, 加入http请求队列里
                         if (!MemberUtil.isSupportedLongCon(member)) {
                             httpQueue.add(new NotifySingleTask(dataId, group, tenant, tag, dumpTs, member.getAddress(),
                                     evt.isBeta));
                         } else {
+                            // 如果支持长连接, 就封装grpc请求任务, 加入grpc请求队列里
                             rpcQueue.add(
                                     new NotifySingleRpcTask(dataId, group, tenant, tag, dumpTs, evt.isBeta, member));
                         }
                     }
                     if (!httpQueue.isEmpty()) {
+                        // 将http请求队列封装成AsyncTask, 交给后台线程异步执行
                         ConfigExecutor.executeAsyncNotify(new AsyncTask(nacosAsyncRestTemplate, httpQueue));
                     }
                     if (!rpcQueue.isEmpty()) {
+                        // 将grpc请求队列封装成AsyncRpcTask, 交给后台线程异步执行
                         ConfigExecutor.executeAsyncNotify(new AsyncRpcTask(rpcQueue));
                     }
                     
@@ -153,8 +159,10 @@ public class AsyncNotifyService {
         
         private void executeAsyncInvoke() {
             while (!queue.isEmpty()) {
+                // 从队列里取出同步任务
                 NotifySingleTask task = queue.poll();
                 String targetIp = task.getTargetIP();
+                // 如果目标ip是nacos集群节点的ip, 就进行同步
                 if (memberManager.hasMember(targetIp)) {
                     // start the health check and there are ips that are not monitored, put them directly in the notification queue, otherwise notify
                     boolean unHealthNeedDelay = memberManager.isUnHealth(targetIp);
@@ -174,6 +182,8 @@ public class AsyncNotifyService {
                             header.addParam("isBeta", "true");
                         }
                         AuthHeaderUtil.addIdentityToHeader(header);
+                        // 发送GET请求/v1/cs/communication/dataChange
+                        // 处理类是CommunicationController.notifyConfigInfo
                         restTemplate.get(task.url, header, Query.EMPTY, String.class, new AsyncNotifyCallBack(task));
                     }
                 }
@@ -449,8 +459,10 @@ public class AsyncNotifyService {
                 LOGGER.error("URLEncoder encode error", e);
             }
             if (StringUtils.isBlank(tenant)) {
+                // 请求路径/v1/cs/communication/dataChange
                 this.url = MessageFormat.format(URL_PATTERN, target, EnvUtil.getContextPath(), dataId, group);
             } else {
+                // 请求路径/v1/cs/communication/dataChange
                 this.url = MessageFormat
                         .format(URL_PATTERN_TENANT, target, EnvUtil.getContextPath(), dataId, group, tenant);
             }

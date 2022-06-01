@@ -80,6 +80,7 @@ public class CommunicationController {
         long lastModifiedTs = StringUtils.isEmpty(lastModified) ? -1 : Long.parseLong(lastModified);
         String handleIp = request.getHeader(NotifyService.NOTIFY_HEADER_OP_HANDLE_IP);
         String isBetaStr = request.getHeader("isBeta");
+        // 接收其他节点同步过来的配置变更
         if (StringUtils.isNotBlank(isBetaStr) && Boolean.parseBoolean(isBetaStr)) {
             dumpService.dump(dataId, group, tenant, lastModifiedTs, handleIp, true);
         } else {
