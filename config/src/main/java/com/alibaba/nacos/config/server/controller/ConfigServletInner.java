@@ -84,11 +84,13 @@ public class ConfigServletInner {
         // Long polling.
         // 请求头有没有携带Long-Pulling-Timeout, 如果有就支持长轮询
         if (LongPollingService.isSupportLongPolling(request)) {
+            // 进行长轮询
             longPollingService.addLongPollingClient(request, response, clientMd5Map, probeRequestSize);
             return HttpServletResponse.SC_OK + "";
         }
         
         // Compatible with short polling logic.
+        // 如果不支持长轮询, 就直接进行短轮询
         List<String> changedGroups = MD5Util.compareMd5(request, response, clientMd5Map);
         
         // Compatible with short polling result.
@@ -110,6 +112,7 @@ public class ConfigServletInner {
         }
         
         // Disable cache.
+        // 直接返回短轮询的数据
         response.setHeader("Pragma", "no-cache");
         response.setDateHeader("Expires", 0);
         response.setHeader("Cache-Control", "no-cache,no-store");
